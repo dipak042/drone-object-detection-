@@ -1,85 +1,97 @@
-# 🚁 Drone Detection System Using YOLOv8
+# 🚁 Drone Detection System using YOLOv8
 
-**Real-Time Object Detection | Python | Label Studio | OpenCV | Raspberry Pi**
+**Real-time drone detection | YOLOv8n | Python | OpenCV | Label Studio | Raspberry Pi 5**
 
-An end-to-end computer vision project for detecting drones in images and live video streams using a custom-trained YOLOv8 model. The project covers dataset collection, annotation, model training, real-time inference, and edge deployment.
+An end-to-end computer vision project that detects drones in images and live video using a custom-trained YOLOv8n model. It covers dataset collection, annotation, training, real-time inference, and edge deployment on a Raspberry Pi 5.
 
-## 📌 Project Overview
+<!-- Add a demo GIF or screenshot here, e.g. ![Demo](assets/demo.gif) -->
 
-The Drone Detection System uses deep learning and computer vision to identify drones in real time. A custom drone dataset is annotated using Label Studio and used to train a YOLOv8 object detection model.
+---
 
-The trained model has been tested successfully with a phone camera feed. Raspberry Pi deployment is partially implemented, with further optimization required to achieve stable real-time performance on resource-constrained hardware.
+## 📊 Results
+
+| Platform | Model | Performance |
+| --- | --- | --- |
+| Raspberry Pi 5 | Custom YOLOv8n | ~15 FPS real-time detection (occasionally higher) |
+| Laptop + phone camera (IP Webcam) | Custom YOLOv8n | Real-time detection with bounding boxes |
+
+<!-- After running `yolo val`, add: Precision / Recall / mAP@0.5 / mAP@0.5:0.95 -->
+
+---
 
 ## ✨ Features
 
-- Real-time drone detection using YOLOv8
-- Custom dataset annotation with Label Studio
-- Training with Ultralytics YOLOv8n
-- Live video inference using OpenCV
-- Phone camera streaming through IP Webcam
-- Bounding-box visualization for detected drones
-- Raspberry Pi edge deployment in progress
-- Planned lightweight model optimization using NCNN or TFLite
+- Custom drone dataset annotated with **Label Studio** (YOLO format export)
+- Training with **Ultralytics YOLOv8n** (single class: `drone`)
+- Real-time inference with **OpenCV** and bounding-box visualization
+- Live phone camera streaming through **IP Webcam**
+- Edge deployment on **Raspberry Pi 5**
+
+---
 
 ## 🛠️ Tech Stack
 
 | Technology | Purpose |
-|---|---|
-| Python | Core programming language |
-| YOLOv8 | Drone object detection |
+| --- | --- |
+| Python | Core language |
+| YOLOv8 (Ultralytics) | Object detection model |
 | Label Studio | Dataset annotation |
 | OpenCV | Image and video processing |
-| Raspberry Pi | Edge deployment |
+| Raspberry Pi 5 | Edge deployment |
 | IP Webcam | Phone camera streaming |
+
+---
 
 ## 🔄 Project Workflow
 
-1. Collect drone images from photographs, open-source datasets, and videos.
-2. Annotate drones using bounding boxes in Label Studio.
-3. Export annotations in YOLO format.
-4. Configure the dataset using a YAML configuration file.
-5. Train the YOLOv8 model.
-6. Test detection on images and live phone-camera video.
-7. Optimize and deploy the model on Raspberry Pi.
+1. Collect drone images from photographs, open-source datasets, and videos
+2. Annotate drones with bounding boxes in Label Studio
+3. Export annotations in YOLO format
+4. Configure the dataset in `data.yaml`
+5. Train the YOLOv8n model
+6. Test detection on images and live camera streams
+7. Deploy on Raspberry Pi 5 for edge inference
+
+---
+
+## 📂 Repository Structure
+
+```
+drone-object-detection-/
+├── README.md
+├── data.yaml              # Dataset configuration (1 class: drone)
+├── object_detect-2.ipynb  # Training and testing notebook
+└── test.rar               # Test samples
+```
+
+---
 
 ## ⚙️ Installation
 
-### 1. Clone the Repository
-
 ```bash
-git clone https://github.com/YOUR_USERNAME/YOUR_REPOSITORY.git
-cd YOUR_REPOSITORY
-```
+git clone https://github.com/dipak042/drone-object-detection-.git
+cd drone-object-detection-
 
-Replace the URL with your actual GitHub repository URL.
-
-### 2. Create a Virtual Environment
-
-```bash
 python3 -m venv venv
-source venv/bin/activate
-```
+source venv/bin/activate        # Windows: venv\Scripts\activate
 
-### 3. Install Dependencies
-
-```bash
 pip install ultralytics opencv-python
 ```
 
-For dataset annotation, install Label Studio:
+To annotate your own data:
 
 ```bash
 pip install label-studio
-label-studio start
+label-studio start              # opens http://localhost:8080
 ```
 
-Open `http://localhost:8080` in your browser to access Label Studio.
+---
 
-## 📂 Dataset Configuration
+## 🏋️ Training
 
-Organize your dataset as follows:
+Dataset layout (YOLO format):
 
-```text
+```
 dataset/
 ├── images/
 │   ├── train/
@@ -89,7 +101,7 @@ dataset/
     └── val/
 ```
 
-Create a `drone.yaml` configuration file:
+`data.yaml`:
 
 ```yaml
 path: dataset
@@ -101,97 +113,73 @@ names:
   0: drone
 ```
 
-Ensure each image has a corresponding YOLO-format label file.
-
-## 🏋️ Model Training
-
-Download the pretrained YOLOv8 Nano model and train it on your dataset:
+Train:
 
 ```bash
-yolo detect train \
-  model=yolov8n.pt \
-  data=drone.yaml \
-  epochs=100 \
-  imgsz=640 \
-  batch=16 \
-  name=drone_detector
+yolo detect train model=yolov8n.pt data=data.yaml epochs=100 imgsz=640 batch=16 name=drone_detector
 ```
 
-The best-performing model weights are typically saved at:
+Best weights are saved to `runs/detect/drone_detector/weights/best.pt`.
 
-```text
-runs/detect/drone_detector/weights/best.pt
+Evaluate:
+
+```bash
+yolo detect val model=runs/detect/drone_detector/weights/best.pt data=data.yaml
 ```
 
-Adjust the batch size according to your available memory.
+---
 
 ## 📱 Real-Time Detection
-
-Use a webcam or phone camera stream to perform inference:
 
 ```python
 from ultralytics import YOLO
 
 model = YOLO("best.pt")
 
-results = model.predict(
-    source=0,
-    conf=0.5,
-    show=True,
-    save=True
-)
+# Webcam: source=0
+# Phone camera (IP Webcam): source="http://PHONE_IP:8080/video"
+results = model.predict(source=0, conf=0.5, show=True, save=True)
 ```
 
-For a phone camera, replace `source=0` with your IP Webcam stream URL:
+Make sure the phone and computer are on the same network when using IP Webcam.
 
-```python
-source = "http://PHONE_IP:8080/video"
-```
+---
 
-Ensure the phone and computer are connected to the same network and that the stream URL is accessible.
+## 🍓 Raspberry Pi 5 Deployment
 
-## 🍓 Raspberry Pi Deployment
+The trained model runs on a **Raspberry Pi 5**, reaching about **15 FPS** for real-time detection. Frame rate can fluctuate with scene complexity and system load.
 
-The next stage is to run inference directly on Raspberry Pi hardware using a camera module or USB webcam.
+Planned improvements:
 
-Current challenges include limited computational resources and inference performance. Planned improvements include:
+- Export to a lighter format (NCNN / TFLite) to push FPS higher
+- Benchmark latency and memory usage across input sizes
+- Mount the Pi on a drone for airborne detection
 
-- Testing lightweight inference formats such as NCNN.
-- Reducing inference latency and memory usage.
-- Benchmarking performance on the target Raspberry Pi.
-- Achieving stable real-time detection on edge hardware.
+---
 
-## 📊 Project Status
+## 📈 Project Status
 
-- [x] Drone dataset collection and annotation workflow
-- [x] YOLOv8 model training workflow
-- [x] Real-time detection using a phone camera feed
-- [ ] Model optimization for Raspberry Pi
-- [ ] Stable real-time Raspberry Pi deployment
+- [x] Dataset collection and annotation
+- [x] YOLOv8n training
+- [x] Real-time detection on a phone camera stream
+- [x] Deployment on Raspberry Pi 5 (~15 FPS)
+- [ ] Model optimization (NCNN / TFLite)
+- [ ] Precision / recall / mAP evaluation
+- [ ] Onboard drone integration
 
-## 🚀 Future Improvements
-
-- Improve detection accuracy across different distances and lighting conditions.
-- Expand the dataset with more drone types and backgrounds.
-- Evaluate precision, recall, and mAP.
-- Optimize inference speed for edge devices.
-- Explore integration with automated monitoring and alert systems.
+---
 
 ## 🎯 Applications
 
-- Drone monitoring and surveillance
-- Restricted-area monitoring
+- Restricted-area drone monitoring
 - Aerial object detection
 - Edge AI and computer vision research
+
+---
 
 ## 👨‍💻 Author
 
 **Dipak Hrishi Das**
-
-Electronics and Communication Engineering Student
+B.Tech, Electronics and Communication Engineering
 
 GitHub: [@dipak042](https://github.com/dipak042)
-
-## 📄 License
-
-This project is intended for educational and research purposes. Add a suitable open-source license to the repository if you wish to permit reuse and redistribution.
